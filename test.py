@@ -8,12 +8,12 @@ if not API_KEY:
     print("❌ Error: Chabi nahi mili! GitHub Secrets check karo.")
 else:
     try:
-        print("⏳ Gemini 1.5 Flash se connect kar rahe hain...")
+        print("⏳ Brahmastra Launch: Gemini 2.5 Flash-Lite se connect kar rahe hain...")
         client = genai.Client(api_key=API_KEY)
         
-        # Bot se sawal (1.5 Flash set kiya hai taaki Quota Error na aaye)
+        # Brahmastra Model: Jo 100% free hai aur kabhi fail nahi hoga
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.5-flash-lite',
             contents="Ek anime fan ke style mein batao ki kya tum zinda ho aur kaam kar rahe ho? Sirf 2 line mein hindi mein."
         )
         
