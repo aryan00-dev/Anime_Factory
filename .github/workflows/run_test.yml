@@ -10,10 +10,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Install GenAI
-        run: pip install google-genai
+      - name: Install Video Editing Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+          sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"//' /etc/ImageMagick-6/policy.xml
+          pip install moviepy==1.0.3
 
-      - name: Run Test Script
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python test.py
+      - name: Run Hacker Edit Script
+        run: python editor.py
