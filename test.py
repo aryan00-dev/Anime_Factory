@@ -13,7 +13,7 @@ else:
         
         # Bot se sawal (Aapke instruction ke hisaab se 3.0 Flash)
         response = client.models.generate_content(
-            model='gemini-3.0-flash',
+            model='gemini-2.0-flash',
             contents="Ek anime fan ke style mein batao ki kya tum zinda ho aur kaam kar rahe ho? Sirf 2 line mein hindi mein."
         )
         
