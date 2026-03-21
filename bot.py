@@ -1,6 +1,5 @@
 import os
 import json
-import re
 import subprocess
 import time
 from google.oauth2 import service_account
@@ -48,10 +47,8 @@ while done is False:
 print("✅ Episode Download Complete!")
 
 # --- 3. FFMPEG AUDIO/SUBTITLE EXTRACTION ---
-print("✂️ FFmpeg se Audio aur Subtitles nikal rahe hain (Bina server crash kiye)...")
-# Extract Audio
+print("✂️ FFmpeg se Audio aur Subtitles nikal rahe hain...")
 subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-vn", "-acodec", "libmp3lame", "-q:a", "2", "audio.mp3"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-# Try to extract subtitles (agar hardcoded nahi hain)
 subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-map", "0:s:0?", "subs.srt"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 print("✅ Audio nikal aayi!")
 
@@ -60,20 +57,62 @@ print("🧠 Gemini episode sun/padh raha hai best scene ke liye...")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 try:
-    # Upload audio to Gemini
     audio_file = client.files.upload(file="audio.mp3")
     print("⏳ Audio processing ka wait kar rahe hain...")
-    time.sleep(10) # Thoda wait taaki file process ho jaye
+    time.sleep(10) 
     
-    prompt = """
-    Listen to this anime episode audio. Find the most badass, hype, or emotional 30 to 45 seconds scene.
-    Return ONLY a JSON format exactly like this, nothing else:
-    {"start_time": "00:12:10", "end_time": "00:12:45", "hook_text": "Duniya mein 3 tarah ke log hote hain...\\nWait for it!"}
-    """
+    prompt = """Listen to this anime episode audio. Find the most badass, hype, or emotional 30 to 45 seconds scene.
+Return ONLY a JSON format exactly like this, nothing else:
+{"start_time": "00:12:10", "end_time": "00:12:45", "hook_text": "Duniya mein 3 tarah ke log hote hain...\\nWait for it!"}"""
     
     response = client.models.generate_content(
         model='gemini-2.5-flash',
         contents=[audio_file, prompt]
     )
     
-    response_text = response.text.strip().replace('
+    # Safe String Replacement to avoid copy-paste errors
+    response_text = response.text.strip()
+    response_text = response_text.replace("```json", "")
+    response_text = response_text.replace("```", "")
+    
+    scene_data = json.loads(response_text)
+    
+    start_t = scene_data["start_time"]
+    end_t = scene_data["end_time"]
+    hook_text = scene_data["hook_text"]
+    print(f"🎯 Gemini ne Scene dhoondh liya! Start: {start_t}, End: {end_t}")
+    print(f"✍️ Hook Text: {hook_text}")
+
+except Exception as e:
+    print(f"⚠️ Gemini Error: {e}. Default 30 seconds cut kar rahe hain.")
+    start_t = "00:02:00"
+    end_t = "00:02:30"
+    hook_text = "Pure Goosebumps!\nWait for the end..."
+
+# --- 5. FFMPEG SURGEON CUT ---
+print("✂️ FFmpeg main episode ko kaat raha hai...")
+subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-ss", start_t, "-to", end_t, "-c:v", "copy", "-c:a", "copy", "cut_scene.mp4"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+print("✅ Scene Cut Complete!")
+
+# --- 6. MOVIEPY VIRAL BLUR EDIT ---
+print("🎬 MoviePy Viral Edit shuru kar raha hai...")
+clip = VideoFileClip("cut_scene.mp4")
+clip = clip.fx(vfx.speedx, 1.05) 
+
+bg_clip = clip.resize(height=1920).crop(x_center=clip.w/2, width=1080).fx(vfx.colorx, 0.5)
+main_clip = clip.resize(width=1080).set_position('center')
+
+txt_clip = TextClip(hook_text, fontsize=65, color='white', font='Arial-Bold', bg_color='rgba(0,0,0,0.6)', size=(1080, None), method='caption')
+txt_clip = txt_clip.set_position(('center', 150)).set_duration(clip.duration)
+
+final_video = CompositeVideoClip([bg_clip, main_clip, txt_clip])
+final_video.write_videofile("final_reel.mp4", fps=24, codec="libx264", audio_codec="aac")
+print("✅ Reel Edit Complete!")
+
+# --- 7. UPLOAD FINAL REEL ---
+print("📤 Final Reel Drive mein upload kar rahe hain...")
+file_metadata = {'name': f"Viral_{video_file['name']}", 'parents': [FINAL_FOLDER_ID]}
+media = MediaFileUpload("final_reel.mp4", mimetype='video/mp4')
+drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+
+print("🎉 BUMM! Mission Complete! Viral Reel Final Folder mein aa gayi!")
