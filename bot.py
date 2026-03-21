@@ -19,7 +19,6 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GDRIVE_JSON_STR = os.environ.get("GDRIVE_CREDENTIALS_JSON")
 RAW_FOLDER_ID = '1Ka3dX7yI1OY3VVhjRI9wVS-iklGf0tc2'
 
-# Genre Folder IDs (Fixed Sad ID underscore)
 GENRE_FOLDERS = {
     "Action": "1YVVpYmHrcYBONWklcgdv3NYiS5_SlJmZ",
     "Chill": "18i3mLxxYTTkPFzbV_746WqMw3pcteIrG",
@@ -50,62 +49,52 @@ print("✅ Episode Download Complete!")
 
 # --- 4. AUDIO EXTRACTION ---
 subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-vn", "-acodec", "libmp3lame", "-q:a", "2", "audio.mp3"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-print("✅ Audio Extracted!")
 
 # --- 5. GEMINI ANALYSIS ---
 client = genai.Client(api_key=GEMINI_API_KEY)
 try:
     audio_file = client.files.upload(file="audio.mp3")
     print("🧠 Gemini mood aur scene pehchan raha hai...")
-    time.sleep(12) 
-    prompt = """Listen to this anime audio.
-1. Find a badass 30-40s scene.
-2. Identify Anime Name.
-3. Detect Genre: Choose ONLY one from [Action, Chill, Romance, Sad].
+    time.sleep(15) 
+    prompt = """Listen to this anime audio. Find a badass 30-40s scene, Identify Anime Name, and Detect Genre: [Action, Chill, Romance, Sad].
 Return ONLY JSON: {"start_time": "00:05:10", "end_time": "00:05:45", "hook_text": "Viral Quote", "anime_name": "Name", "genre": "Action"}"""
     
     response = client.models.generate_content(model='gemini-2.5-flash', contents=[audio_file, prompt])
     scene_data = json.loads(response.text.strip().replace("```json", "").replace("```", ""))
     start_t, end_t = scene_data["start_time"], scene_data["end_time"]
     hook_text, anime_name, genre = scene_data["hook_text"], scene_data["anime_name"], scene_data.get("genre", "Action")
-    print(f"🎯 Scene Found: {start_t} to {end_t} | Genre: {genre} | Anime: {anime_name}")
+    print(f"🎯 Genre: {genre} | Anime: {anime_name}")
 except Exception as e:
-    print(f"⚠️ Gemini Analysis failed: {e}")
-    start_t, end_t, hook_text, anime_name, genre = "00:02:00", "00:02:30", "Wait for it!", "Anime", "Action"
+    print(f"⚠️ Gemini Error: {e}"); start_t, end_t, hook_text, anime_name, genre = "00:02:00", "00:02:30", "Wait for it!", "Anime", "Action"
 
-# --- 6. FFMPEG CUT (WITH BULLETPROOF CHECK) ---
-print("✂️ Scene cutting...")
+# --- 6. FFMPEG CUT ---
 subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-ss", start_t, "-to", end_t, "-c:v", "copy", "-c:a", "copy", "cut_scene.mp4"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-
-# Hacker Check: Agar video khaali cut hui, toh default 2 min scene lo
 if not os.path.exists("cut_scene.mp4") or os.path.getsize("cut_scene.mp4") < 50000:
-    print("🚨 Invalid timestamp! Fixing with default scene...")
-    start_t, end_t = "00:02:00", "00:02:30"
-    subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-ss", start_t, "-to", end_t, "-c:v", "copy", "-c:a", "copy", "cut_scene.mp4"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-
-print("✅ Scene Cut Complete!")
+    subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-ss", "00:01:00", "-to", "00:01:30", "-c:v", "copy", "-c:a", "copy", "cut_scene.mp4"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
 # --- 7. SMART BGM PICKER ---
 bgm_folder_id = GENRE_FOLDERS.get(genre, GENRE_FOLDERS["Action"])
 bgm_results = drive_service.files().list(q=f"'{bgm_folder_id}' in parents and mimeType contains 'audio/'", fields="files(id, name)").execute()
 bgm_files = bgm_results.get('files', [])
-
 has_bgm = False
 if bgm_files:
     random_bgm = random.choice(bgm_files)
-    print(f"🎵 BGM Selected: {random_bgm['name']}")
     request = drive_service.files().get_media(fileId=random_bgm['id'])
-    bh = io.FileIO("bgm.mp3", 'wb')
-    downloader = MediaIoBaseDownload(bh, request); done = False
+    bh = io.FileIO("bgm.mp3", 'wb'); downloader = MediaIoBaseDownload(bh, request); done = False
     while not done: status, done = downloader.next_chunk()
     has_bgm = True
-else:
-    print("⚠️ BGM folder khali hai ya access nahi hai! Without BGM banate hain.")
 
-# --- 8. MOVIEPY EDITING ---
-print("🎬 Final Viral Editing...")
+# --- 8. MOVIEPY EDITING (Safe Blur Fix) ---
+print("🎬 Viral Editing Shuru...")
 clip = VideoFileClip("cut_scene.mp4").fx(vfx.speedx, 1.05)
-bg_clip = clip.resize(height=1920).crop(x_center=clip.w/2, width=1080).fx(vfx.gaussian_blur, radius=50).fx(vfx.colorx, 0.5)
+
+# Background Heavy Blur with fallback
+try:
+    bg_clip = clip.resize(height=1920).crop(x_center=clip.w/2, width=1080).fx(vfx.gaussian_blur, 50).fx(vfx.colorx, 0.5)
+except:
+    print("⚠️ Blur failed, using alternate stretch-blur...")
+    bg_clip = clip.resize(height=1920).crop(x_center=clip.w/2, width=1080).fx(vfx.resize, 0.1).fx(vfx.resize, 10.0).fx(vfx.colorx, 0.5)
+
 main_clip = clip.resize(width=1080).set_position('center')
 txt_clip = TextClip(hook_text, fontsize=60, color='white', font='Arial-Bold', bg_color='rgba(0,0,0,0.6)', size=(1080, None), method='caption').set_position(('center', 280)).set_duration(clip.duration)
 
@@ -131,5 +120,4 @@ outro_clip = CompositeVideoClip([outro_bg, outro_txt]).set_audio(outro_audio)
 # --- 10. FINAL MERGE ---
 final_merged = concatenate_videoclips([final_video, outro_clip])
 final_merged.write_videofile("final_with_music.mp4", fps=24, codec="libx264", audio_codec="aac")
-
-print("🎉 BUMM! Tera professional robot taiyaar hai!")
+print("🎉 MISSION COMPLETE!")
