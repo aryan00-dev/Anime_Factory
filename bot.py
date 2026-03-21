@@ -59,9 +59,10 @@ try:
     print("⏳ Audio processing ka wait kar rahe hain...")
     time.sleep(10) 
     
-    prompt = """Listen to this anime episode audio. Find the most badass, hype, or emotional 30 to 45 seconds scene.
-Return ONLY a JSON format exactly like this, nothing else:
-{"start_time": "00:12:10", "end_time": "00:12:45", "hook_text": "Duniya mein 3 tarah ke log hote hain...\\nWait for it!"}"""
+    # Prompt better kiya hai taaki AI copy-paste na kare
+    prompt = """Listen to this anime audio. Find the most badass 30-second scene.
+Return ONLY a JSON format. Use this structure but with REAL timestamps from the audio and a REAL custom quote:
+{"start_time": "00:05:10", "end_time": "00:05:45", "hook_text": "Write a unique viral quote here!"}"""
     
     response = client.models.generate_content(
         model='gemini-2.5-flash',
@@ -71,9 +72,9 @@ Return ONLY a JSON format exactly like this, nothing else:
     response_text = response.text.strip().replace("```json", "").replace("```", "")
     scene_data = json.loads(response_text)
     
-    start_t = scene_data["start_time"]
-    end_t = scene_data["end_time"]
-    hook_text = scene_data["hook_text"]
+    start_t = scene_data.get("start_time", "00:02:00")
+    end_t = scene_data.get("end_time", "00:02:30")
+    hook_text = scene_data.get("hook_text", "Wait for it!")
     print(f"🎯 Gemini ne Scene dhoondh liya! Start: {start_t}, End: {end_t}")
     print(f"✍️ Hook Text: {hook_text}")
 
@@ -83,9 +84,17 @@ except Exception as e:
     end_t = "00:02:30"
     hook_text = "Pure Goosebumps!\nWait for the end..."
 
-# --- 5. FFMPEG SURGEON CUT ---
+# --- 5. FFMPEG SURGEON CUT (WITH BULLETPROOF CHECK) ---
 print("✂️ FFmpeg main episode ko kaat raha hai...")
 subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-ss", start_t, "-to", end_t, "-c:v", "copy", "-c:a", "copy", "cut_scene.mp4"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+# Hacker Check: Agar video khaali cut hui (size < 50KB), toh default time use karo
+if not os.path.exists("cut_scene.mp4") or os.path.getsize("cut_scene.mp4") < 50000:
+    print("🚨 AI ne galat (bada) time diya tha! Video khaali hai. Auto-Fixing to default scene...")
+    start_t, end_t = "00:02:00", "00:02:30"
+    hook_text = "Wait for the end...\nPure Goosebumps!"
+    subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-ss", start_t, "-to", end_t, "-c:v", "copy", "-c:a", "copy", "cut_scene.mp4"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
 print("✅ Scene Cut Complete!")
 
 # --- 6. MOVIEPY VIRAL BLUR EDIT ---
