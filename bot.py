@@ -50,22 +50,25 @@ print("✅ Episode Download Complete!")
 # --- 4. AUDIO EXTRACTION ---
 subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-vn", "-acodec", "libmp3lame", "-q:a", "2", "audio.mp3"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
-# --- 5. GEMINI ANALYSIS ---
+# --- 5. GEMINI ANALYSIS (Strict 2-Line Rule Added) ---
 client = genai.Client(api_key=GEMINI_API_KEY)
 try:
     audio_file = client.files.upload(file="audio.mp3")
     print("🧠 Gemini mood aur scene pehchan raha hai...")
     time.sleep(15) 
+    # Yahan humne AI ko strict order diya hai exactly 2 lines ke liye
     prompt = """Listen to this anime audio. Find a badass 30-40s scene, Identify Anime Name, and Detect Genre: [Action, Chill, Romance, Sad].
-Return ONLY JSON: {"start_time": "00:05:10", "end_time": "00:05:45", "hook_text": "Viral Quote", "anime_name": "Name", "genre": "Action"}"""
+CRITICAL RULE for hook_text: It MUST be exactly 2 short lines. Not more, not less. Use '\\n' to separate the two lines. Example: "Wait for the end...\\nPure Goosebumps!"
+Return ONLY JSON: {"start_time": "00:05:10", "end_time": "00:05:45", "hook_text": "First line here...\\nSecond line here!", "anime_name": "Name", "genre": "Action"}"""
     
     response = client.models.generate_content(model='gemini-2.5-flash', contents=[audio_file, prompt])
     scene_data = json.loads(response.text.strip().replace("```json", "").replace("```", ""))
     start_t, end_t = scene_data["start_time"], scene_data["end_time"]
     hook_text, anime_name, genre = scene_data["hook_text"], scene_data["anime_name"], scene_data.get("genre", "Action")
     print(f"🎯 Genre: {genre} | Anime: {anime_name}")
+    print(f"✍️ Hook Text: {hook_text}")
 except Exception as e:
-    print(f"⚠️ Gemini Error: {e}"); start_t, end_t, hook_text, anime_name, genre = "00:02:00", "00:02:30", "Wait for it!", "Anime", "Action"
+    print(f"⚠️ Gemini Error: {e}"); start_t, end_t, hook_text, anime_name, genre = "00:02:00", "00:02:30", "Wait for it...\\nPure Goosebumps!", "Anime", "Action"
 
 # --- 6. FFMPEG CUT ---
 subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-ss", start_t, "-to", end_t, "-c:v", "copy", "-c:a", "copy", "cut_scene.mp4"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
@@ -84,7 +87,7 @@ if bgm_files:
     while not done: status, done = downloader.next_chunk()
     has_bgm = True
 
-# --- 8. MOVIEPY EDITING (Safe Blur Fix) ---
+# --- 8. MOVIEPY EDITING (Safe Blur Fix + Better Text Size) ---
 print("🎬 Viral Editing Shuru...")
 clip = VideoFileClip("cut_scene.mp4").fx(vfx.speedx, 1.05)
 
@@ -96,7 +99,9 @@ except:
     bg_clip = clip.resize(height=1920).crop(x_center=clip.w/2, width=1080).fx(vfx.resize, 0.1).fx(vfx.resize, 10.0).fx(vfx.colorx, 0.5)
 
 main_clip = clip.resize(width=1080).set_position('center')
-txt_clip = TextClip(hook_text, fontsize=60, color='white', font='Arial-Bold', bg_color='rgba(0,0,0,0.6)', size=(1080, None), method='caption').set_position(('center', 280)).set_duration(clip.duration)
+
+# Text ki chaudaai (width) thodi kam ki hai (950) taaki screen ke edges par na chipke, aur size thoda adjust kiya hai.
+txt_clip = TextClip(hook_text, fontsize=55, color='white', font='Arial-Bold', bg_color='rgba(0,0,0,0.5)', size=(950, None), method='caption').set_position(('center', 280)).set_duration(clip.duration)
 
 final_video = CompositeVideoClip([bg_clip, main_clip, txt_clip])
 
