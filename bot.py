@@ -4,7 +4,7 @@ import subprocess
 import time
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
+from googleapiclient.http import MediaIoBaseDownload
 from google import genai
 from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip, ColorClip
 import moviepy.video.fx.all as vfx
@@ -15,7 +15,6 @@ print("🚀 BRAHMASTRA PHASE: Anime Factory Start Ho Raha Hai...")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GDRIVE_JSON_STR = os.environ.get("GDRIVE_CREDENTIALS_JSON")
 RAW_FOLDER_ID = '1Ka3dX7yI1OY3VVhjRI9wVS-iklGf0tc2'
-FINAL_FOLDER_ID = '1zcVBLuoOql2FVvrIEmtovIJJ9eWuhFG9'
 
 if not GEMINI_API_KEY or not GDRIVE_JSON_STR:
     print("❌ Error: API Key ya Drive JSON nahi mila!")
@@ -46,14 +45,13 @@ while done is False:
     status, done = downloader.next_chunk()
 print("✅ Episode Download Complete!")
 
-# --- 3. FFMPEG AUDIO/SUBTITLE EXTRACTION ---
-print("✂️ FFmpeg se Audio aur Subtitles nikal rahe hain...")
+# --- 3. FFMPEG AUDIO EXTRACTION ---
+print("✂️ FFmpeg se Audio nikal rahe hain...")
 subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-vn", "-acodec", "libmp3lame", "-q:a", "2", "audio.mp3"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-map", "0:s:0?", "subs.srt"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 print("✅ Audio nikal aayi!")
 
 # --- 4. GEMINI ANALYSIS (THE BRAHMASTRA) ---
-print("🧠 Gemini episode sun/padh raha hai best scene ke liye...")
+print("🧠 Gemini episode sun raha hai best scene ke liye...")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 try:
@@ -70,11 +68,7 @@ Return ONLY a JSON format exactly like this, nothing else:
         contents=[audio_file, prompt]
     )
     
-    # Safe String Replacement to avoid copy-paste errors
-    response_text = response.text.strip()
-    response_text = response_text.replace("```json", "")
-    response_text = response_text.replace("```", "")
-    
+    response_text = response.text.strip().replace("```json", "").replace("```", "")
     scene_data = json.loads(response_text)
     
     start_t = scene_data["start_time"]
@@ -109,10 +103,6 @@ final_video = CompositeVideoClip([bg_clip, main_clip, txt_clip])
 final_video.write_videofile("final_reel.mp4", fps=24, codec="libx264", audio_codec="aac")
 print("✅ Reel Edit Complete!")
 
-# --- 7. UPLOAD FINAL REEL ---
-print("📤 Final Reel Drive mein upload kar rahe hain...")
-file_metadata = {'name': f"Viral_{video_file['name']}", 'parents': [FINAL_FOLDER_ID]}
-media = MediaFileUpload("final_reel.mp4", mimetype='video/mp4')
-drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-
-print("🎉 BUMM! Mission Complete! Viral Reel Final Folder mein aa gayi!")
+# --- 7. BYPASS DRIVE UPLOAD ---
+print("📤 Drive upload bypass kar rahe hain... Video GitHub par direct aayegi!")
+print("🎉 BUMM! Mission Complete! GitHub Actions se apni video download kar lo!")
