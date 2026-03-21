@@ -59,7 +59,6 @@ try:
     print("⏳ Audio processing ka wait kar rahe hain...")
     time.sleep(10) 
     
-    # Prompt better kiya hai taaki AI copy-paste na kare
     prompt = """Listen to this anime audio. Find the most badass 30-second scene.
 Return ONLY a JSON format. Use this structure but with REAL timestamps from the audio and a REAL custom quote:
 {"start_time": "00:05:10", "end_time": "00:05:45", "hook_text": "Write a unique viral quote here!"}"""
@@ -88,9 +87,8 @@ except Exception as e:
 print("✂️ FFmpeg main episode ko kaat raha hai...")
 subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-ss", start_t, "-to", end_t, "-c:v", "copy", "-c:a", "copy", "cut_scene.mp4"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
-# Hacker Check: Agar video khaali cut hui (size < 50KB), toh default time use karo
 if not os.path.exists("cut_scene.mp4") or os.path.getsize("cut_scene.mp4") < 50000:
-    print("🚨 AI ne galat (bada) time diya tha! Video khaali hai. Auto-Fixing to default scene...")
+    print("🚨 AI ne galat time diya tha! Video khaali hai. Auto-Fixing to default scene...")
     start_t, end_t = "00:02:00", "00:02:30"
     hook_text = "Wait for the end...\nPure Goosebumps!"
     subprocess.run(["ffmpeg", "-y", "-i", "raw_episode.mp4", "-ss", start_t, "-to", end_t, "-c:v", "copy", "-c:a", "copy", "cut_scene.mp4"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
@@ -98,15 +96,20 @@ if not os.path.exists("cut_scene.mp4") or os.path.getsize("cut_scene.mp4") < 500
 print("✅ Scene Cut Complete!")
 
 # --- 6. MOVIEPY VIRAL BLUR EDIT ---
-print("🎬 MoviePy Viral Edit shuru kar raha hai...")
+print("🎬 MoviePy Viral Edit shuru kar raha hai (Extra Heavy Blur activated)...")
 clip = VideoFileClip("cut_scene.mp4")
 clip = clip.fx(vfx.speedx, 1.05) 
 
-bg_clip = clip.resize(height=1920).crop(x_center=clip.w/2, width=1080).fx(vfx.colorx, 0.5)
+bg_clip = (clip.resize(height=1920)
+           .crop(x_center=clip.w/2, width=1080)
+           .fx(vfx.gaussian_blur, radius=50) 
+           .fx(vfx.colorx, 0.5))              
+
 main_clip = clip.resize(width=1080).set_position('center')
 
-txt_clip = TextClip(hook_text, fontsize=65, color='white', font='Arial-Bold', bg_color='rgba(0,0,0,0.6)', size=(1080, None), method='caption')
-txt_clip = txt_clip.set_position(('center', 150)).set_duration(clip.duration)
+# Position update kar di hai ('center', 280) taaki ekdum semi jagah par aaye
+txt_clip = TextClip(hook_text, fontsize=60, color='white', font='Arial-Bold', bg_color='rgba(0,0,0,0.6)', size=(1080, None), method='caption')
+txt_clip = txt_clip.set_position(('center', 280)).set_duration(clip.duration)
 
 final_video = CompositeVideoClip([bg_clip, main_clip, txt_clip])
 final_video.write_videofile("final_reel.mp4", fps=24, codec="libx264", audio_codec="aac")
