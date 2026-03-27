@@ -28,3 +28,25 @@ os.makedirs(base_dir + "Audio", exist_ok=True)
 
 print("✅ Folders aur API setup done! Drive se connect karne ke liye ready hain.")
 
+# --- 4. GOOGLE DRIVE SE KACHHA MAAL (VIDEO) NIKALNA ---
+print("Google Drive se kachha episode utha raha hu...")
+
+# Raw_Clips folder ka URL banana
+raw_folder_url = f"https://drive.google.com/drive/folders/{DRIVE_FOLDERS['Raw_Clips']}"
+
+# gdown engine se poora folder download karna
+try:
+    gdown.download_folder(raw_folder_url, output=base_dir + "Raw_Clips", quiet=False, use_cookies=False)
+    print("✅ Download Complete! Raw video Factory mein aa chuki hai.")
+except Exception as e:
+    print("❌ Download fail ho gaya! Error:", e)
+
+# Download hone ke baad check karna ki konsi video aayi hai
+import glob
+downloaded_videos = glob.glob(base_dir + "Raw_Clips/**/*.mp4", recursive=True)
+
+if len(downloaded_videos) > 0:
+    vid_path = downloaded_videos[0]
+    print(f"🎬 Factory ne yeh video pakdi: {vid_path}")
+else:
+    print("⚠️ Koi .mp4 video nahi mili Drive folder mein!")
