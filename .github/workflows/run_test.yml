@@ -1,43 +1,34 @@
-name: Run Anime Factory Bot
+name: Veda Cloud Factory Bot
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: 
+  schedule:
+    - cron: '30 3 * * *'  # Subah 9:00 AM IST
+    - cron: '30 12 * * *' # Shaam 6:00 PM IST
 
 jobs:
-  run-bot:
+  run-factory:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
 
-      - name: Setup Python 3.10
+    steps:
+      - name: 📥 Locker (Repo) check kar raha hu
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Python Engine Set Kar raha hu
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install System Tools (FFmpeg & ImageMagick)
+      - name: 🛠️ Zaroori Tools Install Kar raha hu
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg imagemagick
-          sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"//' /etc/ImageMagick-6/policy.xml
+          sudo apt-get install -y imagemagick
+          pip install -r requirements.txt
 
-      - name: Python Libraries Install
-        run: |
-          pip install google-genai google-api-python-client google-auth-httplib2 google-auth-oauthlib moviepy==1.0.3 Pillow==9.5.0 gTTS scipy
+      - name: 🚀 Veda Factory Start! (Video Ban rahi hai)
+        run: python main.py
 
-      - name: 🚀 LAUNCH THE BRAHMASTRA BOT
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GDRIVE_CREDENTIALS_JSON: ${{ secrets.GDRIVE_CREDENTIALS_JSON }}
-        run: python bot.py
-
-      - name: 📥 Get the Final Reel
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: Viral_Anime_Reel
-          path: final_with_music.mp4
-      - name: 📥 Get the Final Reel
+      - name: 💾 Final Reel Download Link (Artifact)
         uses: actions/upload-artifact@v4
         with:
           name: Viral-Anime-Reel
