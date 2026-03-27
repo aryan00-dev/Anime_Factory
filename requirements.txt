@@ -1,0 +1,7 @@
+google-generativeai
+moviepy==1.0.3
+gdown
+instagrapi
+numpy
+scikit-image
+
