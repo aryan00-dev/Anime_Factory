@@ -8,7 +8,7 @@ import google.generativeai as genai
 from moviepy.editor import VideoFileClip, AudioFileClip, CompositeVideoClip, CompositeAudioClip, TextClip, vfx, ColorClip
 from instagrapi import Client
 
-print("--- ߏ VEDA CLOUD FACTORY ENGINE (FULL AUTO-UPLOAD) STARTED ---")
+print("--- ߏ VEDA CLOUD FACTORY ENGINE (FINAL & ERROR-FREE) STARTED ---")
 
 # --- 1. API SETUP ---
 API_KEY = "AIzaSyCmy7eNoUsqBXiN9tN3E-CEfC7RChOFAmo" 
@@ -110,7 +110,8 @@ vid_clip = vid_clip.fx(vfx.colorx, 1.1)
 
 # Audio Mix
 if selected_audio:
-    bg_music = AudioFileClip(selected_audio).subclip(0, REEL_DURATION).volumex(0.35).fadein(1).fadeout(1)
+    # ⚠️ UPDATE: Fadein aur Fadeout hata diya gaya hai
+    bg_music = AudioFileClip(selected_audio).subclip(0, REEL_DURATION).volumex(0.35)
     if vid_clip.audio:
         final_audio = CompositeAudioClip([vid_clip.audio.volumex(0.7), bg_music])
         vid_clip = vid_clip.set_audio(final_audio)
