@@ -8,10 +8,14 @@ import google.generativeai as genai
 from moviepy.editor import VideoFileClip, AudioFileClip, CompositeVideoClip, CompositeAudioClip, TextClip, vfx, ColorClip
 from instagrapi import Client
 
-print("--- ߏ VEDA CLOUD FACTORY ENGINE (FINAL & ERROR-FREE) STARTED ---")
+print("--- ߏ VEDA CLOUD FACTORY ENGINE (100% SECURE & SMART AUDIO) STARTED ---")
 
-# --- 1. API SETUP ---
-API_KEY = "AIzaSyCmy7eNoUsqBXiN9tN3E-CEfC7RChOFAmo" 
+# --- 1. API SETUP (SECURE MODE) ---
+API_KEY = os.environ.get("GEMINI_API_KEY")
+if not API_KEY:
+    print("❌ CRITICAL ERROR: GEMINI_API_KEY GitHub Secrets mein nahi mila! Factory band ho rahi hai.")
+    exit()
+
 genai.configure(api_key=API_KEY)
 
 # --- 2. GOOGLE DRIVE FOLDER IDs ---
@@ -94,9 +98,16 @@ except Exception as e:
 audio_files = glob.glob(audio_dir + "**/*.mp3", recursive=True) + glob.glob(audio_dir + "**/*.m4a", recursive=True)
 selected_audio = random.choice(audio_files) if audio_files else None
 
-# --- 7. THE EDITOR (SAFE EFFECTS) ---
+# --- 7. THE EDITOR (SAFE EFFECTS & SMART AUDIO) ---
 print("✂️ Kainchi chal rahi hai aur Safe Hacker Effects lag rahe hain...")
 REEL_DURATION = 30
+
+if selected_audio:
+    temp_audio = AudioFileClip(selected_audio)
+    if temp_audio.duration < REEL_DURATION:
+        REEL_DURATION = int(temp_audio.duration) - 1 
+        print(f"⚠️ Gaana chota hai, Reel duration set to: {REEL_DURATION} seconds")
+
 end_time = start_time + REEL_DURATION 
 
 vid_clip = VideoFileClip(vid_path).subclip(start_time, end_time)
@@ -110,7 +121,6 @@ vid_clip = vid_clip.fx(vfx.colorx, 1.1)
 
 # Audio Mix
 if selected_audio:
-    # ⚠️ UPDATE: Fadein aur Fadeout hata diya gaya hai
     bg_music = AudioFileClip(selected_audio).subclip(0, REEL_DURATION).volumex(0.35)
     if vid_clip.audio:
         final_audio = CompositeAudioClip([vid_clip.audio.volumex(0.7), bg_music])
