@@ -28,6 +28,7 @@ jobs:
       - name: ߚ Veda Factory Start! (Video & Auto-Upload)
         env:
           IG_SESSION_ID: ${{ secrets.IG_SESSION_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python main.py
 
       - name: ߒ Final Reel Download Link (Artifact)
@@ -35,3 +36,5 @@ jobs:
         with:
           name: Viral-Anime-Reel
           path: Factory_Workspace/Final_Reels/*.mp4
+
+        
