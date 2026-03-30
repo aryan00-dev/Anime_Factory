@@ -1,7 +1,5 @@
-google-generativeai
 moviepy==1.0.3
 gdown
-instagrapi
+google-generativeai
 numpy
-scikit-image
-
+instagrapi
