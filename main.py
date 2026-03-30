@@ -6,8 +6,9 @@ import time
 import numpy as np
 import google.generativeai as genai
 from moviepy.editor import VideoFileClip, AudioFileClip, CompositeVideoClip, CompositeAudioClip, TextClip, vfx, ColorClip
+from instagrapi import Client
 
-print("--- 🏭 VEDA CLOUD FACTORY ENGINE (ERROR-FREE ADVANCED) STARTED ---")
+print("--- ߏ VEDA CLOUD FACTORY ENGINE (FULL AUTO-UPLOAD) STARTED ---")
 
 # --- 1. API SETUP ---
 API_KEY = "AIzaSyCmy7eNoUsqBXiN9tN3E-CEfC7RChOFAmo" 
@@ -34,7 +35,7 @@ os.makedirs(audio_dir, exist_ok=True)
 os.makedirs(output_dir, exist_ok=True)
 
 # --- 4. VIDEO DOWNLOADER ---
-print("📥 Google Drive se kachha episode utha raha hu...")
+print("ߓ Google Drive se kachha episode utha raha hu...")
 try:
     gdown.download_folder(f"https://drive.google.com/drive/folders/{DRIVE_FOLDERS['Raw_Clips']}", output=raw_dir, quiet=False, use_cookies=False)
 except Exception as e:
@@ -46,10 +47,10 @@ if not videos:
     exit()
 
 vid_path = videos[0]
-print(f"🎬 Video mil gayi: {vid_path}")
+print(f"ߎ Video mil gayi: {vid_path}")
 
 # --- 5. GOD AI ANALYSIS ---
-print("🧠 Video AI ke paas ja rahi hai analysis ke liye...")
+print("ߧ Video AI ke paas ja rahi hai analysis ke liye...")
 try:
     video_file_ai = genai.upload_file(path=vid_path)
     while video_file_ai.state.name == 'PROCESSING':
@@ -62,7 +63,7 @@ try:
     Also, detect the exact MOOD of the scene. The MOOD must be ONLY ONE of these four words: Action, Chill, Sad, Romance.
     Reply ONLY in this exact format separated by '|':
     StartTimeInSeconds|ViralHook|AnimeName|ShortPlot|Rating|Mood
-    Example: 320|Wait for it 😱|Naruto|Epic ninja fight|9.5/10|Action"""
+    Example: 320|Wait for it ߘ|Naruto|Epic ninja fight|9.5/10|Action"""
     
     response = model.generate_content([video_file_ai, prompt])
     ai_data = response.text.strip().split('|')
@@ -74,15 +75,15 @@ try:
     hook_text = ai_data[1]
     detected_mood = ai_data[5].strip()
     
-    print(f"🔥 AI BINGO! Time: {start_time}s | Mood: {detected_mood} | Hook: {hook_text}")
+    print(f"ߔ AI BINGO! Time: {start_time}s | Mood: {detected_mood} | Hook: {hook_text}")
     genai.delete_file(video_file_ai.name)
 
 except Exception as e:
     print("⚠️ AI Error, backup plan chalu:", e)
-    start_time, hook_text, detected_mood = 100, "Wait for it 😱", "Action"
+    start_time, hook_text, detected_mood = 100, "Wait for it ߘ", "Action"
 
 # --- 6. AUDIO DOWNLOADER ---
-print(f"🎵 Detected Mood '{detected_mood}' hai. Drive se music nikal raha hu...")
+print(f"ߎ Detected Mood '{detected_mood}' hai. Drive se music nikal raha hu...")
 mood_folder_id = DRIVE_FOLDERS.get(detected_mood, DRIVE_FOLDERS["Action"]) 
 
 try:
@@ -138,7 +139,25 @@ final_reel = CompositeVideoClip(clips_to_add, size=(w_reel, h_reel)).set_duratio
 
 # --- 8. RENDER REEL ---
 output_file = output_dir + f"Viral_{detected_mood}_Reel.mp4"
-print(f"🔥 Final Reel Tandoor mein paka raha hu... Time: {time.ctime()}")
+print(f"ߔ Final Reel Tandoor mein paka raha hu... Time: {time.ctime()}")
 
 final_reel.write_videofile(output_file, codec="libx264", audio_codec="aac", fps=30, preset="ultrafast", threads=2)
 print(f"✅ BOOM! Factory ka kaam khatam! Reel yahan save hai: {output_file}")
+
+# --- 9. INSTAGRAM AUTO-UPLOAD ---
+print("\nߚ Video taiyar! Ab Instagram par upload ki baari...")
+session_id = os.environ.get("IG_SESSION_ID")
+
+if session_id:
+    try:
+        cl = Client()
+        cl.login_by_sessionid(session_id)
+        caption = f"ߔ Best {detected_mood} Anime Moment! ߎ\n\nDrop a like if you loved this! ❤️\n\n#anime #animeedit #animereels #{detected_mood.lower()} #asianimedaily"
+        
+        print("⏳ Instagram par Reel upload ho rahi hai... (Kripya intezaar karein)")
+        cl.clip_upload(output_file, caption)
+        print("✅ BOOM! Reel successfully Instagram par upload ho gayi!")
+    except Exception as e:
+        print(f"❌ Upload failed: {e}")
+else:
+    print("⚠️ IG_SESSION_ID nahi mila. Upload cancel ho gaya. GitHub Secrets check karo.")
