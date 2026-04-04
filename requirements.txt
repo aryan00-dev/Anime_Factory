@@ -1,6 +1,5 @@
 moviepy==1.0.3
-Pillow==9.5.0
-gdown
 google-generativeai
+requests
+gdown
 numpy
-instagrapi
