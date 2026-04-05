@@ -3,3 +3,4 @@ google-generativeai
 requests
 gdown
 numpy
+Pillow==9.5.0
