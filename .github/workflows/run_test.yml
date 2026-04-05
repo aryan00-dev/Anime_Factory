@@ -1,40 +1,7 @@
-name: Veda Cloud Factory Bot
-
-on:
-  workflow_dispatch: 
-  schedule:
-    - cron: '30 3 * * *'  
-    - cron: '30 12 * * *' 
-
-jobs:
-  run-factory:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: ߓ Locker (Repo) check kar raha hu
-        uses: actions/checkout@v4
-
-      - name: ⚙️ Python Engine Set Kar raha hu
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: ߛ️ Zaroori Tools Install Kar raha hu
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y imagemagick
-          pip install -r requirements.txt
-
-      - name: ߚ Veda Factory Start! (Video & Auto-Upload)
-        env:
-          IG_SESSION_ID: ${{ secrets.IG_SESSION_ID }}
+      - name: Run Veda Engine 🚀
+        env: # Ye pul (bridge) lagana sabse zaroori hai
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
         run: python main.py
-
-      - name: ߒ Final Reel Download Link (Artifact)
-        uses: actions/upload-artifact@v4
-        with:
-          name: Viral-Anime-Reel
-          path: Factory_Workspace/Final_Reels/*.mp4
-
         
