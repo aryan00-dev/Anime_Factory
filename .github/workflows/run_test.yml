@@ -1,11 +1,50 @@
-name: Veda Cloud Engine Auto-Post
+name: Veda Cloud Engine Brahmastra
 
 on:
   schedule:
-    - cron: '30 12 * * *' 
-  workflow_dispatch: # YEH LINE HONA ZAROORI HAI BUTTON KE LIYE
+    - cron: '30 12 * * *' # Roz shaam 6:00 PM IST (UTC 12:30)
+  workflow_dispatch: # Yahi wo button hai jisse tum manual test karoge
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-# ... baaki ka code ...
+    
+    steps:
+      # Step 1: Tumhara code aur files GitHub ke server par layega
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Step 2: System mein Python 3.10 ka fresh setup karega
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # Step 3: BRAHMASTRA - ImageMagick ke permission error ko fix karega (TextClip ke liye zaroori)
+      - name: Install System Dependencies (For MoviePy TextClip)
+        run: |
+          sudo apt-get update 
+          sudo apt-get install -y imagemagick
+          sudo sed -i 's/none/read,write/g' /etc/ImageMagick-6/policy.xml
+
+      # Step 4: Tumhari requirements.txt ki saari libraries properly install karega
+      - name: Install Python Packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 5: Asali Veda Engine chalega (Saari Chaabiyon/Secrets ke sath)
+      - name: Run Veda Engine Factory 🚀
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
+        run: python main.py
+
+      # Step 6: DEBUGGER - Agar code crash hua, toh ye batayega ki files kahan phasi hain
+      - name: Check Workspace System (For Debugging)
+        if: always()
+        run: |
+          echo "--- Checking File System ---"
+          ls -R workspace/ || echo "Workspace folder abhi tak nahi bana hai."
+          
