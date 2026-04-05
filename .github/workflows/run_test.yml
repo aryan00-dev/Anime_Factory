@@ -1,7 +1,11 @@
-      - name: Run Veda Engine 🚀
-        env: # Ye pul (bridge) lagana sabse zaroori hai
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
-          IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
-        run: python main.py
-        
+name: Veda Cloud Engine Auto-Post
+
+on:
+  schedule:
+    - cron: '30 12 * * *' 
+  workflow_dispatch: # YEH LINE HONA ZAROORI HAI BUTTON KE LIYE
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+# ... baaki ka code ...
