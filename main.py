@@ -57,11 +57,11 @@ print("🧠 God AI video scan kar raha hai...", flush=True)
 try:
     video_file_ai = genai.upload_file(path=vid_path)
     
-    # FIX: Naya loop jo status update karega
+    # Naya loop jo status automatically update karega taaki code atke nahi
     while video_file_ai.state.name == 'PROCESSING':
         print("⏳ AI processing mein hai, 5 seconds wait...", flush=True)
         time.sleep(5)
-        video_file_ai = genai.get_file(video_file_ai.name) # Naya status fetch karne ka command
+        video_file_ai = genai.get_file(video_file_ai.name) 
     
     if video_file_ai.state.name == 'FAILED':
         raise Exception("AI failed to process video.")
